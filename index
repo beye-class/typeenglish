@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快樂雲端打字島 | Happy Cloud Typing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            color: #334155;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .font-mono-code {
+            font-family: 'Fredoka', 'Noto Sans TC', monospace;
+        }
+
+        /* 清爽可愛藍天漸層背景 */
+        .cute-sky-bg {
+            background: linear-gradient(180deg, #bae6fd 0%, #e0f2fe 60%, #fef9c3 90%, #dcfce7 100%);
+        }
+
+        /* 飄浮白雲動畫 */
+        @keyframes floatCloud {
+            0% { transform: translateX(-15vw); }
+            100% { transform: translateX(115vw); }
+        }
+
+        .cloud-float-1 {
+            animation: floatCloud 38s linear infinite;
+        }
+        .cloud-float-2 {
+            animation: floatCloud 52s linear infinite;
+            animation-delay: -18s;
+        }
+        .cloud-float-3 {
+            animation: floatCloud 45s linear infinite;
+            animation-delay: -32s;
+        }
+
+        /* 可愛立體卡片外框 */
+        .cute-box-blue {
+            background-color: #ffffff;
+            border: 3px solid #38bdf8;
+            box-shadow: 0 8px 0 #7dd3fc, 0 12px 20px rgba(14, 165, 233, 0.15);
+        }
+
+        .cute-box-pink {
+            background-color: #ffffff;
+            border: 3px solid #f472b6;
+            box-shadow: 0 8px 0 #fbcfe8, 0 12px 20px rgba(244, 114, 182, 0.15);
+        }
+
+        /* 單字雲朵卡片樣式 */
+        .word-card {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: transform 0.12s ease-out, box-shadow 0.2s ease;
+            will-change: top, left;
+            background: #ffffff;
+            border: 3px solid #7dd3fc;
+            box-shadow: 0 6px 0 #bae6fd, 0 8px 15px rgba(14, 165, 233, 0.12);
+        }
+
+        .word-card.locked {
+            z-index: 30;
+            transform: translate(-50%, -50%) scale(1.1);
+            background: #fff1f2;
+            border: 3px solid #fb7185;
+            box-shadow: 0 6px 0 #fecdd3, 0 10px 20px rgba(244, 63, 94, 0.22);
+        }
+
+        /* 錯誤震動動畫 */
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) translateX(0); }
+            25% { transform: translate(-50%, -50%) translateX(-6px); }
+            75% { transform: translate(-50%, -50%) translateX(6px); }
+        }
+
+        .shake-error {
+            animation: shake 0.18s ease-in-out;
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+
+        /* 彩虹光束動畫 */
+        .laser-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 0;
+            animation: laserFade 0.18s ease-out forwards;
+        }
+
+        @keyframes laserFade {
+            0% { opacity: 1; stroke-width: 6; }
+            100% { opacity: 0; stroke-width: 2; }
+        }
+
+        /* 草地受損閃爍 */
+        @keyframes damageFlash {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(251, 113, 133, 0.28); }
+        }
+
+        .screen-damage {
+            animation: damageFlash 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between cute-sky-bg relative overflow-hidden">
+
+    <!-- 背景裝飾：太陽、彩虹與飄浮白雲 -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <!-- 微笑小太陽 -->
+        <div class="absolute top-16 right-8 sm:right-14 w-20 h-20 rounded-full bg-amber-300 border-4 border-amber-200 shadow-lg shadow-amber-300/50 flex items-center justify-center text-3xl animate-pulse">
+            ☀️
+        </div>
+        <!-- 飄浮雲朵 -->
+        <div class="cloud-float-1 absolute top-20 left-0 text-white/80 text-6xl select-none">☁️</div>
+        <div class="cloud-float-2 absolute top-44 left-0 text-white/70 text-7xl select-none">☁️</div>
+        <div class="cloud-float-3 absolute top-72 left-0 text-white/75 text-5xl select-none">☁️</div>
+    </div>
+
+    <!-- 頂部狀態列 (HUD) -->
+    <header class="w-full z-40 bg-white/85 backdrop-blur-md border-b-2 border-sky-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+        <!-- 品牌與標題 -->
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-2xl bg-sky-100 border-2 border-sky-400 flex items-center justify-center text-sky-500 shadow-sm">
+                <i class="fa-solid fa-cloud-sun text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-black text-base sm:text-lg tracking-wide text-slate-700 flex items-center gap-2">
+                    快樂雲端打字島
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 border border-amber-300 font-bold">三年級專區</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- 即時數據儀表板 -->
+        <div class="flex items-center space-x-3 sm:space-x-6 bg-sky-50/90 px-4 py-1.5 rounded-2xl border-2 border-sky-200">
+            <div class="text-center">
+                <p class="text-[11px] font-bold text-slate-400">分數 SCORE</p>
+                <p id="hud-score" class="font-mono-code font-bold text-sm sm:text-lg text-sky-600">0</p>
+            </div>
+            <div class="h-6 w-[2px] bg-sky-200"></div>
+            <div class="text-center">
+                <p class="text-[11px] font-bold text-slate-400">連擊 COMBO</p>
+                <p id="hud-combo" class="font-mono-code font-bold text-sm sm:text-lg text-amber-500">0x</p>
+            </div>
+            <div class="h-6 w-[2px] bg-sky-200"></div>
+            <div class="text-center">
+                <p class="text-[11px] font-bold text-slate-400">速度 WPM</p>
+                <p id="hud-wpm" class="font-mono-code font-bold text-sm sm:text-lg text-emerald-500">0</p>
+            </div>
+            <div class="h-6 w-[2px] bg-sky-200 hidden sm:block"></div>
+            <div class="text-center hidden sm:block">
+                <p class="text-[11px] font-bold text-slate-400">準確率 ACC</p>
+                <p id="hud-acc" class="font-mono-code font-bold text-sm sm:text-lg text-pink-500">100%</p>
+            </div>
+            <div class="h-6 w-[2px] bg-sky-200"></div>
+            <div class="text-center">
+                <p class="text-[11px] font-bold text-slate-400">關卡 LEVEL</p>
+                <p id="hud-wave" class="font-mono-code font-bold text-sm sm:text-lg text-purple-500">1</p>
+            </div>
+        </div>
+
+        <!-- 控制按鈕與生命值 -->
+        <div class="flex items-center space-x-2.5">
+            <!-- 愛心生命條 -->
+            <div class="flex items-center space-x-1.5 bg-rose-50 px-3 py-1.5 rounded-2xl border-2 border-rose-200" title="剩餘愛心">
+                <div id="hud-lives" class="flex space-x-1 text-sm">
+                    <!-- 動態生成愛心 -->
+                </div>
+            </div>
+
+            <!-- 音效開關 -->
+            <button id="btn-sound" class="w-9 h-9 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-600 flex items-center justify-center transition border-2 border-amber-300" title="切換音效">
+                <i class="fa-solid fa-volume-high"></i>
+            </button>
+
+            <!-- 暫停按鈕 -->
+            <button id="btn-pause" class="w-9 h-9 rounded-xl bg-sky-100 hover:bg-sky-200 text-sky-600 flex items-center justify-center transition border-2 border-sky-300 hidden" title="暫停遊戲 (ESC)">
+                <i class="fa-solid fa-pause"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 遊戲主戰場區 -->
+    <main id="game-arena" class="relative flex-1 w-full overflow-hidden z-10">
+        <!-- 粒子特效畫布 -->
+        <canvas id="fx-canvas" class="absolute inset-0 pointer-events-none z-20"></canvas>
+
+        <!-- 彩虹魔法光束 SVG 畫布 -->
+        <svg id="laser-svg" class="absolute inset-0 w-full h-full pointer-events-none z-20"></svg>
+
+        <!-- 掉落單字容器 -->
+        <div id="words-container" class="absolute inset-0 z-30 pointer-events-none"></div>
+
+        <!-- 隱藏的行動裝置輸入框 (讓手機/平板也能喚起鍵盤) -->
+        <input type="text" id="mobile-input" class="opacity-0 absolute -z-10 pointer-events-none" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+        <!-- 底部可愛青草地與發射小基地 -->
+        <div class="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-emerald-300/90 via-emerald-200/70 to-transparent pointer-events-none flex flex-col justify-end items-center pb-2.5 z-20">
+            <!-- 花朵防禦線 -->
+            <div class="w-full border-t-2 border-dashed border-emerald-500/50 mb-2 relative flex justify-between px-8">
+                <span class="text-sm -mt-3.5">🌷</span>
+                <span class="text-sm -mt-3.5 hidden sm:inline">🌻</span>
+                <span class="text-[11px] font-bold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-full -mt-3 border border-emerald-300">🌱 保護花圃底線</span>
+                <span class="text-sm -mt-3.5 hidden sm:inline">🌼</span>
+                <span class="text-sm -mt-3.5">🌷</span>
+            </div>
+
+            <!-- 中央可愛魔法發射台與目前輸入狀態 -->
+            <div id="turret-box" class="bg-white border-2 border-sky-400 px-5 py-1.5 rounded-full shadow-md flex items-center space-x-3 pointer-events-auto cursor-pointer">
+                <span class="text-lg animate-bounce">🪄</span>
+                <span id="current-target-display" class="font-mono-code text-sm sm:text-base font-bold tracking-wider text-sky-600">
+                    準備打字囉！
+                </span>
+                <span class="text-xs text-slate-400 hidden sm:inline">(按 Backspace 可重選)</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- 開始與設定選單遮罩 -->
+    <div id="modal-start" class="fixed inset-0 z-50 bg-sky-900/30 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="max-w-lg w-full cute-box-blue rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-100 border-2 border-amber-300 text-3xl mb-3 shadow-sm">
+                🌈
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-700 tracking-wide mb-2">快樂雲端打字島</h2>
+            <p class="text-slate-500 text-sm mb-6">敲擊鍵盤上的英文字母，把天空飄下來的單字雲朵變成星星吧！</p>
+
+            <!-- 難度與題庫選擇 -->
+            <div class="text-left space-y-4 mb-7">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-sky-600 mb-2">
+                        <i class="fa-solid fa-star mr-1 text-amber-400"></i> 選擇練習模式
+                    </label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5" id="difficulty-selector">
+                        <button type="button" data-diff="easy" class="diff-btn active p-3 rounded-2xl border-2 border-sky-400 bg-sky-50 text-left transition shadow-sm">
+                            <div class="font-bold text-slate-700 text-sm flex items-center justify-between">
+                                <span>初級：字母尋寶</span>
+                                <span class="text-base">🌱</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">A~Z 26個英文字母<br>認識鍵盤位置</p>
+                        </button>
+                        <button type="button" data-diff="normal" class="diff-btn p-3 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-left transition">
+                            <div class="font-bold text-slate-700 text-sm flex items-center justify-between">
+                                <span>中級：迷你單字</span>
+                                <span class="text-base">🐣</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">3 字母超簡單字<br>(cat, dog, sun...)</p>
+                        </button>
+                        <button type="button" data-diff="hard" class="diff-btn p-3 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-left transition">
+                            <div class="font-bold text-slate-700 text-sm flex items-center justify-between">
+                                <span>高級：基礎單字</span>
+                                <span class="text-base">🚀</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-1">4~5 字母三年級單字<br>(book, milk, apple...)</p>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 遊戲操作小撇步 -->
+                <div class="bg-amber-50/80 border-2 border-amber-200 rounded-2xl p-3.5 text-xs text-slate-600 space-y-1.5">
+                    <div class="font-bold text-amber-600 mb-1"><i class="fa-solid fa-lightbulb mr-1"></i> 小小提醒：</div>
+                    <p>• 找到鍵盤上對應的英文字母按下去，就會發射魔法星星喔！</p>
+                    <p>• 如果想換另一朵單字雲，按一下 <kbd class="px-1.5 py-0.5 bg-white rounded border border-amber-300 font-mono-code text-[11px] text-slate-700">Backspace</kbd> 鍵就可以重選。</p>
+                </div>
+            </div>
+
+            <button id="btn-start-game" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-white font-black text-base tracking-wider shadow-md shadow-sky-300 transition transform hover:-translate-y-0.5 active:translate-y-0">
+                <i class="fa-solid fa-play mr-2"></i> 開始打字冒險！(START)
+            </button>
+        </div>
+    </div>
+
+    <!-- 暫停遮罩 -->
+    <div id="modal-pause" class="fixed inset-0 z-50 bg-sky-900/30 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="max-w-sm w-full cute-box-blue rounded-3xl p-6 text-center">
+            <div class="text-4xl mb-2">☕</div>
+            <h3 class="text-2xl font-black text-slate-700 mb-2">休息一下</h3>
+            <p class="text-slate-500 text-sm mb-6">喝口水、動動手指，準備好隨時繼續喔！</p>
+            <div class="space-y-3">
+                <button id="btn-resume" class="w-full py-3 rounded-2xl bg-sky-400 hover:bg-sky-300 text-white font-bold transition shadow-sm">
+                    <i class="fa-solid fa-play mr-2"></i> 繼續遊戲
+                </button>
+                <button id="btn-restart-pause" class="w-full py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold border-2 border-slate-200 transition">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> 重新選擇難度
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結算與單字複習遮罩 -->
+    <div id="modal-gameover" class="fixed inset-0 z-50 bg-sky-900/35 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="max-w-xl w-full cute-box-pink rounded-3xl p-6 sm:p-8 text-center max-h-[90vh] flex flex-col">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-pink-100 border-2 border-pink-300 text-2xl mx-auto mb-3">
+                🏆
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-700 mb-1">太棒了！練習完成</h2>
+            <p id="gameover-subtitle" class="text-slate-500 text-xs sm:text-sm mb-5">你越打越熟練囉！來看看這次的成績單吧</p>
+
+            <!-- 四格統計數據 -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+                <div class="bg-sky-50 p-3 rounded-2xl border-2 border-sky-200">
+                    <p class="text-[11px] font-bold text-slate-400">最終得分</p>
+                    <p id="stat-score" class="font-mono-code font-extrabold text-xl text-sky-600 mt-0.5">0</p>
+                </div>
+                <div class="bg-emerald-50 p-3 rounded-2xl border-2 border-emerald-200">
+                    <p class="text-[11px] font-bold text-slate-400">打字速度 (WPM)</p>
+                    <p id="stat-wpm" class="font-mono-code font-extrabold text-xl text-emerald-600 mt-0.5">0</p>
+                </div>
+                <div class="bg-pink-50 p-3 rounded-2xl border-2 border-pink-200">
+                    <p class="text-[11px] font-bold text-slate-400">準確率</p>
+                    <p id="stat-acc" class="font-mono-code font-extrabold text-xl text-pink-500 mt-0.5">0%</p>
+                </div>
+                <div class="bg-amber-50 p-3 rounded-2xl border-2 border-amber-200">
+                    <p class="text-[11px] font-bold text-slate-400">最高連擊</p>
+                    <p id="stat-combo" class="font-mono-code font-extrabold text-xl text-amber-500 mt-0.5">0</p>
+                </div>
+            </div>
+
+            <!-- 本局單字複習清單 -->
+            <div class="text-left flex-1 overflow-hidden flex flex-col mb-6">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-pink-500">
+                        <i class="fa-solid fa-book-open mr-1"></i> 這次學到的單字小卡
+                    </span>
+                    <span id="stat-words-count" class="text-xs text-slate-500 font-bold">完成 0 個單字</span>
+                </div>
+                <div id="review-list" class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-3 overflow-y-auto max-h-44 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <!-- 動態填入單字回顧 -->
+                </div>
+            </div>
+
+            <div class="flex space-x-3">
+                <button id="btn-play-again" class="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-300 hover:to-rose-300 text-white font-black tracking-wider shadow-md shadow-pink-200 transition">
+                    <i class="fa-solid fa-rotate-right mr-1.5"></i> 再玩一次
+                </button>
+                <button id="btn-change-diff" class="px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold border-2 border-slate-200 transition">
+                    換難度
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 1. 英文單字與繁體中文翻譯題庫 (專為國小三年級初學者設計)
+         */
+        const WORD_BANK = {
+            // 初級：純 26 個英文字母練習，附帶大寫對照幫助三年級學生認字
+            easy: [
+                { en: "a", zh: "字母 A" }, { en: "b", zh: "字母 B" }, { en: "c", zh: "字母 C" },
+                { en: "d", zh: "字母 D" }, { en: "e", zh: "字母 E" }, { en: "f", zh: "字母 F" },
+                { en: "g", zh: "字母 G" }, { en: "h", zh: "字母 H" }, { en: "i", zh: "字母 I" },
+                { en: "j", zh: "字母 J" }, { en: "k", zh: "字母 K" }, { en: "l", zh: "字母 L" },
+                { en: "m", zh: "字母 M" }, { en: "n", zh: "字母 N" }, { en: "o", zh: "字母 O" },
+                { en: "p", zh: "字母 P" }, { en: "q", zh: "字母 Q" }, { en: "r", zh: "字母 R" },
+                { en: "s", zh: "字母 S" }, { en: "t", zh: "字母 T" }, { en: "u", zh: "字母 U" },
+                { en: "v", zh: "字母 V" }, { en: "w", zh: "字母 W" }, { en: "x", zh: "字母 X" },
+                { en: "y", zh: "字母 Y" }, { en: "z", zh: "字母 Z" }
+            ],
+            // 中級：2~3 個字母的超基礎 CVC 單字與常見字
+            normal: [
+                { en: "cat", zh: "🐱 貓咪" }, { en: "dog", zh: "🐶 小狗" }, { en: "pig", zh: "🐷 小豬" },
+                { en: "ant", zh: "🐜 螞蟻" }, { en: "bee", zh: "🐝 蜜蜂" }, { en: "cow", zh: "🐮 乳牛" },
+                { en: "fox", zh: "🦊 狐狸" }, { en: "sun", zh: "☀️ 太陽" }, { en: "sky", zh: "☁️ 天空" },
+                { en: "red", zh: "🔴 紅色" }, { en: "pen", zh: "🖊️ 原子筆" }, { en: "bag", zh: "🎒 書包" },
+                { en: "box", zh: "📦 盒子" }, { en: "cup", zh: "🥤 杯子" }, { en: "hat", zh: "👒 帽子" },
+                { en: "bus", zh: "🚌 公車" }, { en: "car", zh: "🚗 汽車" }, { en: "bed", zh: "🛏️ 床" },
+                { en: "egg", zh: "🥚 雞蛋" }, { en: "tea", zh: "🍵 茶" }, { en: "jam", zh: "🍓 果醬" },
+                { en: "eye", zh: "👁️ 眼睛" }, { en: "ear", zh: "👂 耳朵" }, { en: "leg", zh: "🦵 腿" },
+                { en: "one", zh: "1️⃣ 一" }, { en: "two", zh: "2️⃣ 二" }, { en: "six", zh: "6️⃣ 六" },
+                { en: "ten", zh: "🔟 十" }, { en: "boy", zh: "👦 男孩" }, { en: "mom", zh: "👩 媽媽" }
+            ],
+            // 高級：國小三年級基礎生活單字 (4~5個字母為主)
+            hard: [
+                { en: "book", zh: "📖 書本" }, { en: "desk", zh: "🪑 書桌" }, { en: "bird", zh: "🐦 小鳥" },
+                { en: "fish", zh: "🐟 魚" }, { en: "duck", zh: "🦆 鴨子" }, { en: "lion", zh: "🦁 獅子" },
+                { en: "bear", zh: "🐻 熊" }, { en: "frog", zh: "🐸 青蛙" }, { en: "milk", zh: "🥛 牛奶" },
+                { en: "cake", zh: "🍰 蛋糕" }, { en: "rice", zh: "🍚 米飯" }, { en: "soup", zh: "🍲 湯" },
+                { en: "star", zh: "⭐ 星星" }, { en: "moon", zh: "🌙 月亮" }, { en: "tree", zh: "🌳 樹" },
+                { en: "rain", zh: "🌧️ 雨" }, { en: "blue", zh: "🔵 藍色" }, { en: "pink", zh: "🩷 粉紅色" },
+                { en: "hand", zh: "✋ 手" }, { en: "nose", zh: "👃 鼻子" }, { en: "face", zh: "😊 臉" },
+                { en: "ball", zh: "⚽ 球" }, { en: "kite", zh: "🪁 風箏" }, { en: "doll", zh: "🎎 洋娃娃" },
+                { en: "door", zh: "🚪 門" }, { en: "home", zh: "🏠 家" }, { en: "park", zh: "🏞️ 公園" },
+                { en: "good", zh: "👍 好的" }, { en: "apple", zh: "🍎 蘋果" }, { en: "water", zh: "💧 水" }
+            ]
+        };
+
+        /**
+         * 2. Web Audio API 合成音效引擎 (不依賴外部音檔，保證可運作)
+         */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // 雷射擊中字母音效
+            playLaser() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(680, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.07);
+
+                gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.07);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.07);
+            }
+
+            // 單字擊破爆炸音效
+            playExplosion() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(55, this.ctx.currentTime + 0.22);
+
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.22);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.22);
+            }
+
+            // 打錯字警告音
+            playError() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(110, this.ctx.currentTime + 0.05);
+
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+
+            // 基地受損音效
+            playDamage() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(45, this.ctx.currentTime + 0.35);
+
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.35);
+            }
+        }
+
+        /**
+         * 3. 遊戲核心狀態與粒子系統
+         */
+        const sound = new SoundEngine();
+        const canvas = document.getElementById('fx-canvas');
+        const ctx = canvas.getContext('2d');
+        const wordsContainer = document.getElementById('words-container');
+        const laserSvg = document.getElementById('laser-svg');
+        const arena = document.getElementById('game-arena');
+
+        // 難度參數配置 (專為國小三年級放慢掉落速度，給孩子尋找鍵盤按鍵的時間)
+        const DIFFICULTY_CONFIG = {
+            easy:   { spawnInterval: 2200, baseSpeed: 24, maxWords: 5, speedScale: 1.5 },
+            normal: { spawnInterval: 2600, baseSpeed: 28, maxWords: 5, speedScale: 1.8 },
+            hard:   { spawnInterval: 2800, baseSpeed: 32, maxWords: 6, speedScale: 2.2 }
+        };
+
+        let gameState = {
+            status: 'menu', // 'menu' | 'playing' | 'paused' | 'gameover'
+            difficulty: 'easy',
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            lives: 5,
+            wave: 1,
+            activeWords: [],
+            lockedWordId: null,
+            correctKeystrokes: 0,
+            totalKeystrokes: 0,
+            startTime: 0,
+            elapsedPlayTime: 0,
+            lastFrameTime: 0,
+            spawnTimer: 0,
+            completedWords: [], // 記錄本局練習過的單字供結算複習
+            particles: []
+        };
+
+        // 調整畫布尺寸
+        function resizeCanvas() {
+            canvas.width = arena.clientWidth;
+            canvas.height = arena.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 產生爆炸粒子
+        function spawnParticles(x, y, color = '#06b6d4') {
+            for (let i = 0; i < 18; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1.5 + Math.random() * 4.5;
+                gameState.particles.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: 2 + Math.random() * 2.5,
+                    color,
+                    alpha: 1
+                });
+            }
+        }
+
+        // 發射視覺雷射線
+        function drawLaserBeam(targetX, targetY, isDestroy = false) {
+            const turretRect = document.getElementById('turret-box').getBoundingClientRect();
+            const arenaRect = arena.getBoundingClientRect();
+            const startX = turretRect.left + turretRect.width / 2 - arenaRect.left;
+            const startY = turretRect.top - arenaRect.top;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', startX);
+            line.setAttribute('y1', startY);
+            line.setAttribute('x2', targetX);
+            line.setAttribute('y2', targetY);
+            line.setAttribute('stroke', isDestroy ? '#ec4899' : '#06b6d4');
+            line.setAttribute('stroke-linecap', 'round');
+            line.classList.add('laser-line');
+
+            laserSvg.appendChild(line);
+            setTimeout(() => line.remove(), 160);
+        }
+
+        /**
+         * 4. 單字生成與 DOM 更新
+         */
+        function spawnWord() {
+            const config = DIFFICULTY_CONFIG[gameState.difficulty];
+            if (gameState.activeWords.length >= config.maxWords) return;
+
+            const bank = WORD_BANK[gameState.difficulty];
+            // 盡量挑選目前畫面上沒有相同字首的單字，讓鎖定體驗更順暢
+            const activeFirstChars = new Set(gameState.activeWords.map(w => w.en[0]));
+            let available = bank.filter(item => !activeFirstChars.has(item.en[0]));
+            if (available.length === 0) available = bank;
+
+            const chosen = available[Math.floor(Math.random() * available.length)];
+            const id = 'word-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6);
+
+            // 計算安全的水平座標 (避免超出左右邊界)
+            const padding = 90;
+            const x = padding + Math.random() * Math.max(100, (arena.clientWidth - padding * 2));
+            const speed = config.baseSpeed + (gameState.wave - 1) * config.speedScale + (Math.random() * 12 - 6);
+
+            const el = document.createElement('div');
+            el.id = id;
+            el.className = 'word-card px-4 py-2.5 rounded-2xl text-center';
+            el.style.left = `${x}px`;
+            el.style.top = `-30px`;
+
+            const wordObj = {
+                id,
+                en: chosen.en,
+                zh: chosen.zh,
+                typedIndex: 0,
+                x,
+                y: -30,
+                speed,
+                el
+            };
+
+            renderWordCardContent(wordObj);
+            wordsContainer.appendChild(el);
+            gameState.activeWords.push(wordObj);
+        }
+
+        function renderWordCardContent(wordObj) {
+            const isLocked = gameState.lockedWordId === wordObj.id;
+            const typedPart = wordObj.en.slice(0, wordObj.typedIndex);
+            const remainPart = wordObj.en.slice(wordObj.typedIndex);
+
+            if (isLocked) {
+                wordObj.el.className = 'word-card locked px-4 py-2.5 rounded-2xl text-center';
+            } else {
+                wordObj.el.className = 'word-card px-4 py-2.5 rounded-2xl text-center';
+            }
+
+            // 初級單一字母時放大字體，讓小朋友看得更清楚
+            const fontSizeClass = wordObj.en.length === 1 ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl';
+
+            wordObj.el.innerHTML = `
+                <div class="font-mono-code font-bold ${fontSizeClass} tracking-wider leading-tight">
+                    <span class="text-emerald-500">${typedPart}</span><span class="${isLocked ? 'text-rose-500 underline decoration-2' : 'text-sky-600'}">${remainPart.charAt(0)}</span><span class="text-slate-600">${remainPart.slice(1)}</span>
+                </div>
+                <div class="text-xs text-slate-500 font-bold mt-1">${wordObj.zh}</div>
+            `;
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-score').textContent = gameState.score.toLocaleString();
+            document.getElementById('hud-combo').textContent = `${gameState.combo}x`;
+            document.getElementById('hud-wave').textContent = gameState.wave;
+
+            // 計算 WPM (每 5 個正確字元算 1 個標準單字)
+            const totalMinutes = Math.max(0.05, (gameState.elapsedPlayTime / 1000) / 60);
+            const wpm = Math.round((gameState.correctKeystrokes / 5) / totalMinutes);
+            document.getElementById('hud-wpm').textContent = gameState.correctKeystrokes > 0 ? wpm : 0;
+
+            // 計算準確率
+            const acc = gameState.totalKeystrokes > 0
+                ? Math.round((gameState.correctKeystrokes / gameState.totalKeystrokes) * 100)
+                : 100;
+            document.getElementById('hud-acc').textContent = `${acc}%`;
+
+            // 更新可愛愛心生命圖示
+            const livesContainer = document.getElementById('hud-lives');
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const heart = document.createElement('span');
+                heart.textContent = i < gameState.lives ? '❤️' : '🤍';
+                heart.className = 'transition-transform duration-200';
+                livesContainer.appendChild(heart);
+            }
+
+            // 更新底部鎖定顯示器
+            const targetDisplay = document.getElementById('current-target-display');
+            const lockedWord = gameState.activeWords.find(w => w.id === gameState.lockedWordId);
+            if (lockedWord) {
+                const typed = lockedWord.en.slice(0, lockedWord.typedIndex);
+                const untyped = lockedWord.en.slice(lockedWord.typedIndex);
+                targetDisplay.innerHTML = `<span class="text-emerald-500">${typed}</span><span class="text-rose-500">${untyped}</span> <span class="text-xs text-slate-500 font-sans ml-2">(${lockedWord.zh})</span>`;
+            } else {
+                targetDisplay.textContent = '準備打字囉！';
+            }
+        }
+
+        /**
+         * 5. 鍵盤輸入與目標鎖定邏輯
+         */
+        function handleKeyInput(key) {
+            if (gameState.status !== 'playing') return;
+
+            // 解除鎖定熱鍵
+            if (key === 'Backspace' || key === 'Tab') {
+                if (gameState.lockedWordId) {
+                    const prevLocked = gameState.activeWords.find(w => w.id === gameState.lockedWordId);
+                    gameState.lockedWordId = null;
+                    if (prevLocked) {
+                        prevLocked.typedIndex = 0;
+                        renderWordCardContent(prevLocked);
+                    }
+                    updateHUD();
+                }
+                return;
+            }
+
+            // 僅處理英文字母 a-z
+            if (!/^[a-zA-Z]$/.test(key)) return;
+            const char = key.toLowerCase();
+            gameState.totalKeystrokes++;
+
+            let targetWord = gameState.activeWords.find(w => w.id === gameState.lockedWordId);
+
+            // 若尚未鎖定單字，尋找字首符合且最靠近底部的單字
+            if (!targetWord) {
+                const candidates = gameState.activeWords.filter(w => w.en[0].toLowerCase() === char);
+                if (candidates.length > 0) {
+                    // 挑選 Y 座標最大（最接近防禦底線）的單字優先鎖定
+                    candidates.sort((a, b) => b.y - a.y);
+                    targetWord = candidates[0];
+                    gameState.lockedWordId = targetWord.id;
+                }
+            }
+
+            // 檢查輸入字母是否符合目標單字的下一個字母
+            if (targetWord && targetWord.en[targetWord.typedIndex].toLowerCase() === char) {
+                targetWord.typedIndex++;
+                gameState.correctKeystrokes++;
+                gameState.combo++;
+                if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
+
+                // 檢查是否完成整個單字
+                if (targetWord.typedIndex >= targetWord.en.length) {
+                    sound.playExplosion();
+                    drawLaserBeam(targetWord.x, targetWord.y, true);
+                    spawnParticles(targetWord.x, targetWord.y, '#ec4899');
+                    spawnParticles(targetWord.x, targetWord.y, '#06b6d4');
+
+                    // 計分：基礎字長分數 * 連擊倍率
+                    const comboMultiplier = 1 + Math.floor(gameState.combo / 10) * 0.2;
+                    gameState.score += Math.round(targetWord.en.length * 25 * comboMultiplier);
+
+                    // 記錄已擊破單字（不重複記錄）
+                    if (!gameState.completedWords.some(w => w.en === targetWord.en)) {
+                        gameState.completedWords.push({ en: targetWord.en, zh: targetWord.zh });
+                    }
+
+                    // 每擊破 8 個單字提升一波難度
+                    const newWave = 1 + Math.floor(gameState.score / 1200);
+                    if (newWave > gameState.wave) gameState.wave = newWave;
+
+                    // 移除單字
+                    targetWord.el.remove();
+                    gameState.activeWords = gameState.activeWords.filter(w => w.id !== targetWord.id);
+                    gameState.lockedWordId = null;
+                } else {
+                    sound.playLaser();
+                    drawLaserBeam(targetWord.x, targetWord.y, false);
+                    spawnParticles(targetWord.x, targetWord.y, '#10b981');
+                    renderWordCardContent(targetWord);
+                }
+            } else {
+                // 輸入錯誤
+                sound.playError();
+                gameState.combo = 0;
+                if (targetWord) {
+                    targetWord.el.classList.remove('shake-error');
+                    void targetWord.el.offsetWidth; // 觸發重繪
+                    targetWord.el.classList.add('shake-error');
+                }
+            }
+
+            updateHUD();
+        }
+
+        // 監聽實體鍵盤與行動裝置虛擬鍵盤
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (gameState.status === 'playing') pauseGame();
+                else if (gameState.status === 'paused') resumeGame();
+                return;
+            }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+            }
+            handleKeyInput(e.key);
+        });
+
+        const mobileInput = document.getElementById('mobile-input');
+        mobileInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (val.length > 0) {
+                const lastChar = val[val.length - 1];
+                handleKeyInput(lastChar);
+                e.target.value = '';
+            }
+        });
+
+        // 點擊戰場時聚焦隱藏輸入框，支援手機與平板喚起鍵盤
+        arena.addEventListener('click', () => {
+            if (gameState.status === 'playing') {
+                mobileInput.focus();
+            }
+        });
+
+        /**
+         * 6. 遊戲主迴圈 (動畫與碰撞檢測)
+         */
+        function gameLoop(timestamp) {
+            if (gameState.status !== 'playing') return;
+
+            const dt = timestamp - gameState.lastFrameTime;
+            gameState.lastFrameTime = timestamp;
+            gameState.elapsedPlayTime += dt;
+            gameState.spawnTimer += dt;
+
+            const config = DIFFICULTY_CONFIG[gameState.difficulty];
+            // 隨波數微幅縮短生成間隔
+            const currentSpawnInterval = Math.max(700, config.spawnInterval - (gameState.wave - 1) * 90);
+
+            if (gameState.spawnTimer >= currentSpawnInterval) {
+                spawnWord();
+                gameState.spawnTimer = 0;
+            }
+
+            const defenseLineY = arena.clientHeight - 55;
+
+            // 更新所有單字位置
+            for (let i = gameState.activeWords.length - 1; i >= 0; i--) {
+                const word = gameState.activeWords[i];
+                word.y += (word.speed * dt) / 1000;
+                word.el.style.top = `${word.y}px`;
+
+                // 觸底扣血檢測
+                if (word.y >= defenseLineY) {
+                    sound.playDamage();
+                    arena.classList.remove('screen-damage');
+                    void arena.offsetWidth;
+                    arena.classList.add('screen-damage');
+
+                    spawnParticles(word.x, defenseLineY, '#ef4444');
+                    if (gameState.lockedWordId === word.id) {
+                        gameState.lockedWordId = null;
+                    }
+                    word.el.remove();
+                    gameState.activeWords.splice(i, 1);
+                    gameState.lives--;
+                    gameState.combo = 0;
+                    updateHUD();
+
+                    if (gameState.lives <= 0) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+
+            // 更新與繪製粒子特效
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const p = gameState.particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.03;
+
+                if (p.alpha <= 0) {
+                    gameState.particles.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /**
+         * 7. 遊戲流程控制 (開始、暫停、結算)
+         */
+        function startGame() {
+            sound.init();
+            // 清除舊單字
+            wordsContainer.innerHTML = '';
+            laserSvg.innerHTML = '';
+
+            gameState = {
+                ...gameState,
+                status: 'playing',
+                score: 0,
+                combo: 0,
+                maxCombo: 0,
+                lives: 5,
+                wave: 1,
+                activeWords: [],
+                lockedWordId: null,
+                correctKeystrokes: 0,
+                totalKeystrokes: 0,
+                elapsedPlayTime: 0,
+                lastFrameTime: performance.now(),
+                spawnTimer: 0,
+                completedWords: [],
+                particles: []
+            };
+
+            document.getElementById('modal-start').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('btn-pause').classList.remove('hidden');
+
+            updateHUD();
+            spawnWord();
+            mobileInput.focus();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function pauseGame() {
+            if (gameState.status !== 'playing') return;
+            gameState.status = 'paused';
+            document.getElementById('modal-pause').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            if (gameState.status !== 'paused') return;
+            gameState.status = 'playing';
+            gameState.lastFrameTime = performance.now();
+            document.getElementById('modal-pause').classList.add('hidden');
+            mobileInput.focus();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState.status = 'gameover';
+            document.getElementById('btn-pause').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.remove('hidden');
+
+            const totalMinutes = Math.max(0.05, (gameState.elapsedPlayTime / 1000) / 60);
+            const wpm = gameState.correctKeystrokes > 0
+                ? Math.round((gameState.correctKeystrokes / 5) / totalMinutes)
+                : 0;
+            const acc = gameState.totalKeystrokes > 0
+                ? Math.round((gameState.correctKeystrokes / gameState.totalKeystrokes) * 100)
+                : 100;
+
+            document.getElementById('stat-score').textContent = gameState.score.toLocaleString();
+            document.getElementById('stat-wpm').textContent = wpm;
+            document.getElementById('stat-acc').textContent = `${acc}%`;
+            document.getElementById('stat-combo').textContent = `${gameState.maxCombo}x`;
+            document.getElementById('stat-words-count').textContent = `完成 ${gameState.completedWords.length} 個單字`;
+
+            // 填入本局練習過的單字清單
+            const reviewList = document.getElementById('review-list');
+            reviewList.innerHTML = '';
+            if (gameState.completedWords.length === 0) {
+                reviewList.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-4">這次還沒完成單字，再試一次吧！💪</div>`;
+            } else {
+                gameState.completedWords.forEach(item => {
+                    const badge = document.createElement('div');
+                    badge.className = 'flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border-2 border-sky-100 shadow-sm';
+                    badge.innerHTML = `
+                        <span class="font-mono-code font-bold text-sky-600 text-sm">${item.en}</span>
+                        <span class="text-slate-600 font-medium">${item.zh}</span>
+                    `;
+                    reviewList.appendChild(badge);
+                });
+            }
+        }
+
+        // 綁定 UI 按鈕事件
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.diff-btn').forEach(b => {
+                    b.className = 'diff-btn p-3 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-left transition';
+                });
+                btn.className = 'diff-btn active p-3 rounded-2xl border-2 border-sky-400 bg-sky-50 text-left transition shadow-sm';
+                gameState.difficulty = btn.getAttribute('data-diff');
+            });
+        });
+
+        document.getElementById('btn-start-game').addEventListener('click', startGame);
+        document.getElementById('btn-pause').addEventListener('click', pauseGame);
+        document.getElementById('btn-resume').addEventListener('click', resumeGame);
+
+        document.getElementById('btn-restart-pause').addEventListener('click', () => {
+            gameState.status = 'menu';
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('modal-start').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-play-again').addEventListener('click', startGame);
+        document.getElementById('btn-change-diff').addEventListener('click', () => {
+            gameState.status = 'menu';
+            document.getElementById('modal-gameover').classList.add('hidden');
+            document.getElementById('modal-start').classList.remove('hidden');
+        });
+
+        document.getElementById('btn-sound').addEventListener('click', (e) => {
+            sound.enabled = !sound.enabled;
+            const icon = e.currentTarget.querySelector('i');
+            icon.className = sound.enabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-slate-400';
+        });
+
+        // 初始化 HUD 顯示
+        window.onload = () => {
+            resizeCanvas();
+            updateHUD();
+        };
+    </script>
+</body>
+</html>
